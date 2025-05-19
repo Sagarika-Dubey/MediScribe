@@ -3,819 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Medical Conversation to SOAP Note</title>
-    <style>
-        :root {
-            --primary-color: #4a89dc;
-            --secondary-color: #5d9cec;
-            --background-color: #f5f7fa;
-            --text-color: #434a54;
-            --border-color: #e6e9ed;
-            --success-color: #8cc152;
-            --danger-color: #da4453;
-            --light-text: #aab2bd;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: var(--background-color);
-            color: var(--text-color);
-            line-height: 1.6;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        h1 {
-            color: var(--primary-color);
-            margin-bottom: 10px;
-        }
-
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-        }
-
-        @media (max-width: 768px) {
-            .main-content {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .card {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .card-title {
-            font-size: 1.2rem;
-            color: var(--primary-color);
-            margin: 0;
-        }
-
-        .controls {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        button {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 10px 15px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        button:hover {
-            background-color: var(--secondary-color);
-        }
-
-        button:disabled {
-            background-color: var(--light-text);
-            cursor: not-allowed;
-        }
-
-        button.record {
-            background-color: var(--danger-color);
-        }
-
-        button.record.recording {
-            animation: pulse 1.5s infinite;
-        }
-
-        button.clear {
-            background-color: var(--light-text);
-        }
-
-        @keyframes pulse {
-            0% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.7;
-            }
-            100% {
-                opacity: 1;
-            }
-        }
-
-        .transcript-container {
-            max-height: 400px;
-            overflow-y: auto;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            padding: 15px;
-            background-color: white;
-        }
-
-        #fullTranscript {
-            white-space: pre-wrap;
-            line-height: 1.5;
-        }
-
-        #partialText {
-            color: var(--light-text);
-            font-style: italic;
-        }
-
-        .soap-section {
-            margin-bottom: 15px;
-        }
-
-        .soap-section h3 {
-            margin-bottom: 8px;
-            color: var(--primary-color);
-        }
-
-        .soap-content {
-            background-color: white;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            padding: 10px;
-            min-height: 80px;
-            white-space: pre-wrap;
-        }
-
-        .status-indicator {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background-color: var(--danger-color);
-            margin-right: 5px;
-        }
-
-        .status-indicator.connected {
-            background-color: var(--success-color);
-        }
-
-        .connection-status {
-            display: flex;
-            align-items: center;
-            font-size: 0.9rem;
-            color: var(--light-text);
-        }
-
-        .icon {
-            width: 20px;
-            height: 20px;
-            fill: currentColor;
-        }
-
-        #durationDisplay {
-            font-family: monospace;
-            font-size: 1.2rem;
-            margin-left: auto;
-            color: var(--primary-color);
-        }
-
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            color: var(--light-text);
-            font-size: 0.9rem;
-        }
-    </style>
+    <title>Medical Transcription Service</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Medical Conversation to SOAP Note</h1>
-            <p>Record a medical conversation to automatically generate SOAP notes</p>
-            <div id="errorBanner" style="display: none; background-color: #ffe3e3; color: #d32f2f; padding: 10px; margin-top: 10px; border-radius: 4px;">
-                <strong>Error:</strong> <span id="errorMessage"></span>
-                <button id="dismissError" style="float: right; background: none; border: none; color: #d32f2f; cursor: pointer;">×</button>
-            </div>
-            <div id="debugControls" style="margin-top: 10px; padding: 10px; background-color: #f0f0f0; border-radius: 4px;">
-                <label for="serverUrlInput">Server URL: </label>
-                <input type="text" id="serverUrlInput" value="ws://localhost:8000/ws" style="width: 250px; padding: 5px;">
-                <button id="updateServerUrl" style="margin-left: 5px; padding: 5px 10px;">Update</button>
-                <button id="testConnection" style="margin-left: 5px; padding: 5px 10px;">Test Connection</button>
-                <div>
-                    <label><input type="checkbox" id="showDebugInfo" checked> Show Debug Info</label>
-                </div>
+            <h1>Medical Transcription Assistant</h1>
+            <div class="actions">
+                <button id="printButton" class="btn btn-secondary"><i class="fas fa-print"></i> Print</button>
             </div>
         </header>
 
-        <div class="main-content">
-            <div class="left-column">
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">Voice Recording</h2>
-                        <div class="connection-status">
-                            <span class="status-indicator" id="connectionStatus"></span>
-                            <span id="statusText">Disconnected</span>
+        <main>
+            <div class="control-panel">
+                <div class="audio-controls">
+                    <button id="startButton" class="btn btn-primary"><i class="fas fa-microphone"></i> Start Recording</button>
+                    <button id="stopButton" class="btn btn-danger" disabled><i class="fas fa-stop"></i> Stop</button>
+                    <div class="status-indicator">
+                        <div id="statusLight" class="status-light"></div>
+                        <span id="statusText">Ready</span>
+                    </div>
+                </div>
+                
+                <div class="upload-section">
+                    <label for="audioUpload" class="btn btn-secondary"><i class="fas fa-upload"></i> Upload Audio</label>
+                    <input type="file" id="audioUpload" accept="audio/*" hidden>
+                    <span id="uploadFileName">No file selected</span>
+                </div>
+                
+                <div class="calibration-controls">
+                    <h3>Speaker Calibration</h3>
+                    <div class="calibration-buttons">
+                        <button id="calibrateDoctor" class="btn btn-outline"><i class="fas fa-user-md"></i> Calibrate Doctor</button>
+                        <button id="calibratePatient" class="btn btn-outline"><i class="fas fa-user"></i> Calibrate Patient</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <div class="transcript-panel">
+                    <h2>Conversation Transcript</h2>
+                    <div id="transcript" class="transcript-content"></div>
+                    <button id="generateSoapButton" class="btn btn-primary">Generate SOAP Note</button>
+                </div>
+
+                <div class="soap-panel">
+                    <h2>SOAP Note</h2>
+                    <div id="soapNote" class="soap-content">
+                        <div class="soap-section">
+                            <h3>S - Subjective</h3>
+                            <div id="subjective" class="soap-section-content editable" contenteditable="true"></div>
+                        </div>
+                        <div class="soap-section">
+                            <h3>A - Assessment</h3>
+                            <div id="assessment" class="soap-section-content editable" contenteditable="true"></div>
+                        </div>
+                        <div class="soap-section">
+                            <h3>P - Plan</h3>
+                            <div id="plan" class="soap-section-content editable" contenteditable="true"></div>
+                            <button id="editPlanButton" class="btn btn-edit"><i class="fas fa-pen"></i> Edit Prescription</button>
                         </div>
                     </div>
-                    
-                    <div class="controls">
-                        <button id="recordButton" class="record">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <circle cx="12" cy="12" r="6"></circle>
-                            </svg>
-                            Start Recording
-                        </button>
-                        <button id="clearButton" class="clear">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m-6 5v6m4-6v6"></path>
-                            </svg>
-                            Clear All
-                        </button>
-                        <span id="durationDisplay">00:00</span>
-                    </div>
-
-                    <div class="card-header">
-                        <h3 class="card-title">Transcript</h3>
-                    </div>
-                    <div class="transcript-container">
-                        <div id="fullTranscript"></div>
-                        <div id="partialText"></div>
-                    </div>
                 </div>
             </div>
+        </main>
+    </div>
 
-            <div class="right-column">
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">SOAP Note</h2>
-                    </div>
-                    
-                    <div class="soap-section">
-                        <h3>Subjective</h3>
-                        <div id="subjectiveContent" class="soap-content"></div>
-                    </div>
-                    
-                    <div class="soap-section">
-                        <h3>Objective</h3>
-                        <div id="objectiveContent" class="soap-content"></div>
-                    </div>
-                    
-                    <div class="soap-section">
-                        <h3>Assessment</h3>
-                        <div id="assessmentContent" class="soap-content"></div>
-                    </div>
-                    
-                    <div class="soap-section">
-                        <h3>Plan</h3>
-                        <div id="planContent" class="soap-content"></div>
-                    </div>
-                </div>
+    <!-- Modal for editing prescription -->
+    <div id="prescriptionModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Edit Prescription</h2>
+            <div id="medicationsList">
+                <!-- Medications will be dynamically inserted here -->
             </div>
-        </div>
-
-        <div class="footer">
-            <p>This application uses voice recognition to automatically generate SOAP notes from medical conversations</p>
+            <div class="add-medication">
+                <button id="addMedicationBtn" class="btn btn-secondary"><i class="fas fa-plus"></i> Add Medication</button>
+            </div>
+            <div class="modal-footer">
+                <button id="savePrescriptionBtn" class="btn btn-primary">Save Changes</button>
+            </div>
         </div>
     </div>
 
-    <script>
-        // WebSocket connection parameters
-        const WS_URL = 'ws://localhost:8000/ws';
-        const API_URL = 'http://localhost:8000';
-        
-        // Debug mode
-        const DEBUG = true;
-        
-        // DOM elements
-        const recordButton = document.getElementById('recordButton');
-        const clearButton = document.getElementById('clearButton');
-        const fullTranscript = document.getElementById('fullTranscript');
-        const partialText = document.getElementById('partialText');
-        const subjectiveContent = document.getElementById('subjectiveContent');
-        const objectiveContent = document.getElementById('objectiveContent');
-        const assessmentContent = document.getElementById('assessmentContent');
-        const planContent = document.getElementById('planContent');
-        const connectionStatus = document.getElementById('connectionStatus');
-        const statusText = document.getElementById('statusText');
-        const durationDisplay = document.getElementById('durationDisplay');
-        
-        // Application state
-        let socket = null;
-        let mediaRecorder = null;
-        let audioContext = null;
-        let isRecording = false;
-        let recordingStartTime = null;
-        let durationTimer = null;
-        let reconnectAttempts = 0;
-        const MAX_RECONNECT_ATTEMPTS = 5;
-        
-        // Initialize the application
-        function init() {
-            // Set up event listeners
-            recordButton.addEventListener('click', toggleRecording);
-            clearButton.addEventListener('click', clearConversation);
-            
-            // Set up debug controls
-            document.getElementById('updateServerUrl').addEventListener('click', updateServerUrl);
-            document.getElementById('testConnection').addEventListener('click', testConnection);
-            document.getElementById('showDebugInfo').addEventListener('change', toggleDebugMode);
-            document.getElementById('dismissError').addEventListener('click', dismissError);
-            
-            // Try to establish WebSocket connection
-            connectWebSocket();
-        }
-        
-        // Update server URL from input field
-        function updateServerUrl() {
-            const newUrl = document.getElementById('serverUrlInput').value.trim();
-            if (newUrl) {
-                // Close existing connection if any
-                if (socket) {
-                    socket.close();
-                    socket = null;
-                }
-                
-                // Update URL and reconnect
-                const wsUrl = newUrl;
-                const apiUrl = newUrl.replace('ws://', 'http://').replace('wss://', 'https://').replace('/ws', '');
-                
-                logDebug(`Updated server URLs - WS: ${wsUrl}, API: ${apiUrl}`);
-                
-                // Connect with new URL
-                connectWebSocket();
-                
-                showError('Server URL updated. Testing connection...');
-                setTimeout(testConnection, 1000);
-            }
-        }
-        
-        // Test WebSocket connection
-        function testConnection() {
-            if (socket && socket.readyState === WebSocket.OPEN) {
-                showError('Connection successful!', 'success');
-            } else {
-                showError('Failed to connect to server. Check the URL and make sure the server is running.');
-                
-                // Try to reconnect
-                if (socket) {
-                    socket.close();
-                    socket = null;
-                }
-                connectWebSocket();
-            }
-        }
-        
-        // Toggle debug mode
-        function toggleDebugMode(e) {
-            DEBUG = e.target.checked;
-            logDebug(`Debug mode ${DEBUG ? 'enabled' : 'disabled'}`);
-        }
-        
-        // Show error message in banner
-        function showError(message, type = 'error') {
-            const banner = document.getElementById('errorBanner');
-            const messageEl = document.getElementById('errorMessage');
-            
-            messageEl.textContent = message;
-            banner.style.display = 'block';
-            
-            if (type === 'success') {
-                banner.style.backgroundColor = '#e3ffe3';
-                banner.style.color = '#2fd35a';
-            } else {
-                banner.style.backgroundColor = '#ffe3e3';
-                banner.style.color = '#d32f2f';
-            }
-            
-            // Auto-dismiss success messages
-            if (type === 'success') {
-                setTimeout(dismissError, 3000);
-            }
-        }
-        
-        // Dismiss error banner
-        function dismissError() {
-            document.getElementById('errorBanner').style.display = 'none';
-        }
-        
-        // Connect to WebSocket server
-        function connectWebSocket() {
-            if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
-                logDebug('WebSocket already connected or connecting');
-                return; // Already connected or connecting
-            }
-            
-            try {
-                logDebug('Attempting to connect to WebSocket...');
-                socket = new WebSocket(WS_URL);
-                
-                socket.onopen = () => {
-                    logDebug('WebSocket connection established');
-                    updateConnectionStatus(true);
-                    reconnectAttempts = 0;
-                };
-                
-                socket.onmessage = (event) => {
-                    logDebug('Received message from server', event.data);
-                    handleSocketMessage(event.data);
-                };
-                
-                socket.onclose = (event) => {
-                    logDebug(`WebSocket connection closed: Code: ${event.code}, Reason: ${event.reason}`);
-                    updateConnectionStatus(false);
-                    
-                    // Try to reconnect if not at max attempts
-                    if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-                        reconnectAttempts++;
-                        logDebug(`Reconnecting attempt ${reconnectAttempts}...`);
-                        setTimeout(connectWebSocket, 2000);
-                    }
-                };
-                
-                socket.onerror = (error) => {
-                    console.error('WebSocket error:', error);
-                    logDebug('WebSocket error occurred');
-                    updateConnectionStatus(false);
-                };
-            } catch (error) {
-                console.error('Failed to connect to WebSocket:', error);
-                logDebug('Failed to connect to WebSocket', error);
-                updateConnectionStatus(false);
-            }
-        }
-        
-        // Handle incoming WebSocket messages
-        function handleSocketMessage(data) {
-            try {
-                const message = JSON.parse(data);
-                logDebug('Received message type:', message.type);
-                
-                switch (message.type) {
-                    case 'transcript':
-                        // Add new recognized text to transcript
-                        fullTranscript.innerHTML += ' ' + message.text;
-                        partialText.textContent = '';
-                        
-                        // Auto-scroll to bottom
-                        fullTranscript.parentElement.scrollTop = fullTranscript.parentElement.scrollHeight;
-                        logDebug('Added transcribed text:', message.text);
-                        break;
-                        
-                    case 'partial':
-                        // Update partial text
-                        partialText.textContent = message.partial;
-                        logDebug('Updated partial text:', message.partial);
-                        break;
-                        
-                    case 'soap_update':
-                        // Update SOAP note sections
-                        updateSoapNote(message.soap);
-                        logDebug('Updated SOAP note');
-                        break;
-                        
-                    default:
-                        logDebug('Unknown message type:', message.type);
-                }
-            } catch (error) {
-                console.error('Error handling WebSocket message:', error);
-                logDebug('Failed to parse or handle WebSocket message', error);
-            }
-        }
-        
-        // Toggle recording state
-        async function toggleRecording() {
-            if (!isRecording) {
-                await startRecording();
-            } else {
-                stopRecording();
-            }
-        }
-        
-        // Start audio recording
-        async function startRecording() {
-            try {
-                // Check WebSocket connection first
-                if (!socket || socket.readyState !== WebSocket.OPEN) {
-                    alert('WebSocket connection is not established. Please try again later.');
-                    logDebug('Cannot start recording: WebSocket not connected');
-                    return;
-                }
-                
-                logDebug('Requesting microphone access...');
-                // Request microphone access
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    audio: {
-                        channelCount: 1,
-                        sampleRate: 16000, // Vosk expects 16kHz
-                        echoCancellation: true,
-                        noiseSuppression: true
-                    } 
-                });
-                logDebug('Microphone access granted');
-                
-                // Set up audio context and processor
-                audioContext = new (window.AudioContext || window.webkitAudioContext)({
-                    sampleRate: 16000 // Vosk works best with 16kHz
-                });
-                logDebug(`AudioContext created with sample rate: ${audioContext.sampleRate}Hz`);
-                
-                const microphone = audioContext.createMediaStreamSource(stream);
-                
-                // Use Audio Worklet if available (better performance), otherwise fall back to ScriptProcessor
-                if (audioContext.audioWorklet) {
-                    logDebug('Using AudioWorklet for audio processing');
-                    await setupAudioWorklet(microphone, stream);
-                } else {
-                    logDebug('Falling back to ScriptProcessor for audio processing');
-                    setupScriptProcessor(microphone, stream);
-                }
-                
-                // Update UI state
-                isRecording = true;
-                recordButton.textContent = 'Stop Recording';
-                recordButton.classList.add('recording');
-                
-                // Start time tracking
-                recordingStartTime = Date.now();
-                startDurationTimer();
-                
-                // Add status message to transcript for debugging
-                fullTranscript.innerHTML += '<div style="color:#888;">Recording started. If you see this message but no transcription appears when speaking, please check browser console (F12) for errors.</div>';
-                
-            } catch (error) {
-                console.error('Error starting recording:', error);
-                logDebug('Failed to start recording', error);
-                alert('Could not access microphone. Please check permissions and try again.');
-            }
-        }
-        
-        // Set up audio worklet for more efficient audio processing
-        async function setupAudioWorklet(microphone, stream) {
-            try {
-                // Load AudioWorklet code
-                await audioContext.audioWorklet.addModule('data:text/javascript;base64,' + btoa(`
-                    class AudioProcessor extends AudioWorkletProcessor {
-                        constructor() {
-                            super();
-                            this.bufferSize = 4096;
-                            this.buffer = new Float32Array(this.bufferSize);
-                            this.bufferIndex = 0;
-                        }
-                        
-                        process(inputs, outputs, parameters) {
-                            const input = inputs[0][0];
-                            if (!input) return true;
-                            
-                            // Fill buffer
-                            for (let i = 0; i < input.length; i++) {
-                                this.buffer[this.bufferIndex++] = input[i];
-                                
-                                // When buffer is full, send it and reset
-                                if (this.bufferIndex >= this.bufferSize) {
-                                    this.port.postMessage({
-                                        audioData: this.buffer.slice(0)
-                                    });
-                                    this.bufferIndex = 0;
-                                }
-                            }
-                            return true;
-                        }
-                    }
-                    
-                    registerProcessor('audio-processor', AudioProcessor);
-                `));
-                
-                // Create and connect the worklet
-                const audioProcessor = new AudioWorkletNode(audioContext, 'audio-processor');
-                
-                // Handle data from worklet
-                audioProcessor.port.onmessage = (event) => {
-                    if (!isRecording) return;
-                    
-                    // Convert and send audio data
-                    const inputData = event.data.audioData;
-                    const pcmData = convertFloat32ToInt16(inputData);
-                    
-                    // Send to server if connection is open
-                    if (socket && socket.readyState === WebSocket.OPEN) {
-                        socket.send(pcmData);
-                    }
-                };
-                
-                // Connect audio nodes
-                microphone.connect(audioProcessor);
-                audioProcessor.connect(audioContext.destination);
-                
-                // Create media recorder for state tracking
-                mediaRecorder = new MediaRecorder(stream);
-                mediaRecorder.start();
-                
-                logDebug('AudioWorklet setup complete');
-            } catch (error) {
-                console.error('Error setting up AudioWorklet:', error);
-                logDebug('AudioWorklet setup failed, falling back to ScriptProcessor', error);
-                
-                // Fall back to ScriptProcessor
-                setupScriptProcessor(microphone, stream);
-            }
-        }
-        
-        // Set up script processor as fallback
-        function setupScriptProcessor(microphone, stream) {
-            // Create script processor node
-            const processor = audioContext.createScriptProcessor(4096, 1, 1);
-            
-            // Create media recorder for tracking state
-            mediaRecorder = new MediaRecorder(stream);
-            
-            // Connect microphone to processor
-            microphone.connect(processor);
-            processor.connect(audioContext.destination);
-            
-            // Process audio data
-            processor.onaudioprocess = (e) => {
-                if (!isRecording) return;
-                
-                // Get audio data
-                const inputData = e.inputBuffer.getChannelData(0);
-                
-                // Convert to 16-bit PCM (what Vosk expects)
-                const pcmData = convertFloat32ToInt16(inputData);
-                
-                // Send to server if connection is open
-                if (socket && socket.readyState === WebSocket.OPEN) {
-                    socket.send(pcmData);
-                }
-            };
-            
-            // Start media recorder (just for tracking state)
-            mediaRecorder.start();
-            
-            logDebug('ScriptProcessor setup complete');
-        }
-        
-        // Stop audio recording
-        function stopRecording() {
-            logDebug('Stopping recording');
-            
-            if (!isRecording) return;
-            
-            // Stop media recorder
-            if (mediaRecorder) {
-                mediaRecorder.stop();
-                mediaRecorder.stream.getTracks().forEach(track => track.stop());
-                mediaRecorder = null;
-                logDebug('MediaRecorder stopped and tracks released');
-            }
-            
-            // Clean up audio context
-            if (audioContext) {
-                audioContext.close().then(() => {
-                    logDebug('AudioContext closed successfully');
-                }).catch(err => {
-                    logDebug('Error closing AudioContext', err);
-                });
-                audioContext = null;
-            }
-            
-            // Update UI state
-            isRecording = false;
-            recordButton.textContent = 'Start Recording';
-            recordButton.classList.remove('recording');
-            
-            // Stop duration timer
-            clearInterval(durationTimer);
-            
-            logDebug('Recording stopped completely');
-        }
-        
-        // Clear conversation and SOAP note
-        async function clearConversation() {
-            // Stop recording if active
-            if (isRecording) {
-                stopRecording();
-            }
-            
-            try {
-                // Clear transcript UI
-                fullTranscript.innerHTML = '';
-                partialText.textContent = '';
-                
-                // Clear SOAP note UI
-                subjectiveContent.textContent = '';
-                objectiveContent.textContent = '';
-                assessmentContent.textContent = '';
-                planContent.textContent = '';
-                
-                // Reset duration display
-                durationDisplay.textContent = '00:00';
-                
-                // Call API to clear server-side data
-                const response = await fetch(`${API_URL}/clear`, {
-                    method: 'POST'
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to clear conversation on server');
-                }
-                
-                console.log('Conversation cleared');
-            } catch (error) {
-                console.error('Error clearing conversation:', error);
-                alert('Failed to clear conversation. Please try again.');
-            }
-        }
-        
-        // Update SOAP note sections in UI
-        function updateSoapNote(soap) {
-            subjectiveContent.textContent = soap.subjective || 'No subjective data yet';
-            objectiveContent.textContent = soap.objective || 'No objective data yet';
-            assessmentContent.textContent = soap.assessment || 'No assessment yet';
-            planContent.textContent = soap.plan || 'No plan yet';
-        }
-        
-        // Update connection status indicator
-        function updateConnectionStatus(connected) {
-            if (connected) {
-                connectionStatus.classList.add('connected');
-                statusText.textContent = 'Connected';
-            } else {
-                connectionStatus.classList.remove('connected');
-                statusText.textContent = 'Disconnected';
-                
-                // Stop recording if active
-                if (isRecording) {
-                    stopRecording();
-                }
-            }
-        }
-        
-        // Start timer to display recording duration
-        function startDurationTimer() {
-            durationTimer = setInterval(() => {
-                const elapsedTime = Math.floor((Date.now() - recordingStartTime) / 1000);
-                const minutes = Math.floor(elapsedTime / 60).toString().padStart(2, '0');
-                const seconds = (elapsedTime % 60).toString().padStart(2, '0');
-                durationDisplay.textContent = `${minutes}:${seconds}`;
-            }, 1000);
-        }
-        
-        // Convert Float32Array from AudioBuffer to Int16Array for Vosk
-        function convertFloat32ToInt16(float32Array) {
-            const l = float32Array.length;
-            const int16Array = new Int16Array(l);
-            
-            for (let i = 0; i < l; i++) {
-                // Convert to 16-bit signed integer
-                // Clamp between -1 and 1 then multiply by 32767
-                const s = Math.max(-1, Math.min(1, float32Array[i]));
-                int16Array[i] = s < 0 ? s * 32768 : s * 32767;
-            }
-            
-            if (DEBUG) {
-                console.log(`Sending audio chunk of size: ${int16Array.buffer.byteLength} bytes`);
-            }
-            
-            return int16Array.buffer;
-        }
-        
-        // Helper function to log important events
-        function logDebug(message, data = null) {
-            if (!DEBUG) return;
-            
-            if (data) {
-                console.log(`[DEBUG] ${message}`, data);
-            } else {
-                console.log(`[DEBUG] ${message}`);
-            }
-        }
-        
-        // Initialize the application when page loads
-        window.addEventListener('load', init);
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
